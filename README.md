@@ -52,3 +52,7 @@ Locally verified page intervals for the supplied CVOT 2021 PDF:
 - Genesis 3: --chapter 3 --page-start 23 --page-end 25 --verse-count 24
 
 A limited offline audit found 11 CVOT-anchored VSO moves in Genesis 2 and 11 in Genesis 3, with original CHES words preserved. These are **partial local word-order proposals**, not completed verse translations. See docs/verification/GENESIS_2_3_LOCAL_AUDIT.md. Source documents and generated chapter text remain local.
+
+## Stage 4: ambiguous CVOT anchors and interrupted subjects
+
+When multiple CVOT bold subject/verb positions match one CHES local clause, the engine now refuses to choose arbitrarily. It also refuses a partial Yahweh move if a CHES editorial marker interrupts Yahweh Elohim. These policies reject two previously proposed movements in Genesis 1:27 and Genesis 3:1. The revised local audit finds 49 anchored local proposals across Genesis 1–3, not approved complete English text. Details: docs/verification/STAGE_4_AMBIGUITY_AUDIT.md.

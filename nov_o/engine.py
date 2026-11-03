@@ -84,6 +84,9 @@ def _subject(window: list[Unit]) -> int:
     if not window:
         return 0
     first=window[0].raw
+    # Reject an editorially interrupted proper-name phrase (Gen 3:1).
+    if first.lower() == 'yahweh' and len(window) > 1 and window[1].raw.lower() in MARKERS:
+        return 0
     if first.lower() in ('elohim','yahweh','adam','moses'):
         if first.lower()=='yahweh' and len(window)>1 and window[1].raw.lower()=='elohim':
             return 2
@@ -103,13 +106,15 @@ def _cvot_orders_subject_before_verb(subject: list[Unit], verb: Unit,
     if not subparts:
         return None
     target=[w.lower() for w in bold_words]
+    matches=[]
     for i in range(len(target)-len(subparts)):
         if i in used or target[i:i+len(subparts)] != subparts:
             continue
         tail=target[i+len(subparts):i+len(subparts)+4]
         if any(_stems(w) & roots for w in tail):
-            return i
-    return None
+            matches.append(i)
+    # Do not guess which clause the same subject and verb belong to.
+    return matches[0] if len(matches)==1 else None
 
 
 def _anchor_order_consistent(source_index: int, cvot_position: int,
@@ -141,13 +146,14 @@ def _cvot_svo_object_anchor(subject: list[Unit], verb: Unit, obj: Unit,
         return None
     target = [w.lower() for w in bold_words]
     minimum = len(subject_words) + 1 + len(object_words)
+    matches=[]
     for start in range(len(target) - minimum + 1):
         if start in used or target[start:start+len(subject_words)] != subject_words:
             continue
         vi = start + len(subject_words)
         if (_stems(target[vi]) & roots) and target[vi+1:vi+1+len(object_words)] == object_words:
-            return start
-    return None
+            matches.append(start)
+    return matches[0] if len(matches)==1 else None
 
 
 def _move_object_before_subject(units: list[Unit], bold_words: list[str],
