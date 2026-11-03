@@ -111,6 +111,80 @@ def _cvot_orders_subject_before_verb(subject: list[Unit], verb: Unit,
             return i
     return None
 
+
+def _anchor_order_consistent(source_index: int, cvot_position: int,
+                             moves: list[dict]) -> bool:
+    """Do not cross source/target clause anchor orders."""
+    for m in moves:
+        src = min(m['source_verb_indices'])
+        target = m['cvot_bold_subject_index']
+        if src == source_index or (src < source_index) != (target < cvot_position):
+            return False
+    return True
+
+
+def _cvot_svo_object_anchor(subject: list[Unit], verb: Unit, obj: Unit,
+                            bold_words: list[str], used: set[int]) -> int | None:
+    """Recognize only CHES direct or prepositional THEM, not unknown objects."""
+    if obj.raw == '»·them':
+        object_words = ['them']
+    elif obj.raw == 'to·them':
+        object_words = ['to', 'them']
+    else:
+        return None
+    roots = _verb_root(verb.raw)
+    if not roots:
+        return None
+    subject_words = [w for u in subject
+                     for w in WORD.findall(u.raw.lower().replace('·', ' '))]
+    if not subject_words:
+        return None
+    target = [w.lower() for w in bold_words]
+    minimum = len(subject_words) + 1 + len(object_words)
+    for start in range(len(target) - minimum + 1):
+        if start in used or target[start:start+len(subject_words)] != subject_words:
+            continue
+        vi = start + len(subject_words)
+        if (_stems(target[vi]) & roots) and target[vi+1:vi+1+len(object_words)] == object_words:
+            return start
+    return None
+
+
+def _move_object_before_subject(units: list[Unit], bold_words: list[str],
+                                used: set[int], prior_moves: list[dict]
+                                ) -> tuple[list[Unit], list[dict]]:
+    """Move narrowly attested V-O-S to S-V-O, retaining original source IDs."""
+    out: list[Unit] = []
+    changes: list[dict] = []
+    i = 0
+    while i < len(units):
+        if i + 2 < len(units):
+            verb, obj, subj = units[i:i+3]
+            if _subject([subj]) == 1:
+                anchor = _cvot_svo_object_anchor([subj], verb, obj, bold_words, used)
+                if anchor is not None and _anchor_order_consistent(
+                    min(verb.sources), anchor, prior_moves + changes
+                ):
+                    if verb.raw.startswith('and·'):
+                        out.append(Unit('and',verb.sources))
+                        moving_verb = Unit(verb.raw[4:],verb.sources)
+                    else:
+                        moving_verb = verb
+                    out.extend((subj,moving_verb,obj))
+                    changes.append({
+                        'source_verb_indices':list(verb.sources),
+                        'subject_source_indices':[list(subj.sources)],
+                        'object_source_indices':list(obj.sources),
+                        'rule':'VOS_TO_SVO_CVOT_BOLD_OBJECT_ANCHORED',
+                        'cvot_bold_subject_index':anchor,
+                    })
+                    used.add(anchor)
+                    i += 3
+                    continue
+        out.append(units[i])
+        i += 1
+    return out,changes
+
 def reorder_verse(ches_spans: list[str], cvot_bold_words: list[str]) -> dict:
     """Advisory local VSO->SVO proposal only; no entire-verse PASS is possible."""
     if not isinstance(ches_spans,list) or not all(isinstance(x,str) for x in ches_spans):
@@ -126,7 +200,9 @@ def reorder_verse(ches_spans: list[str], cvot_bold_words: list[str]) -> dict:
         subject=units[i+1:i+1+subject_len]
         target_position=(_cvot_orders_subject_before_verb(subject,candidate,cvot_bold_words,used_target_positions)
                          if subject_len else None)
-        if target_position is not None:
+        if target_position is not None and _anchor_order_consistent(
+            min(candidate.sources), target_position, moves
+        ):
             if candidate.raw.startswith('and·'):
                 proposed.append(Unit('and',candidate.sources))
                 verb=Unit(candidate.raw[4:],candidate.sources)
@@ -141,9 +217,16 @@ def reorder_verse(ches_spans: list[str], cvot_bold_words: list[str]) -> dict:
             i+=1+subject_len
         else:
             proposed.append(candidate); i+=1
+    proposed, object_moves = _move_object_before_subject(
+        proposed, cvot_bold_words, used_target_positions, moves
+    )
+    moves.extend(object_moves)
     def atoms(values):
         return Counter(a for v in values for a in v.raw.replace('·','-').split('-') if a)
-    assert atoms(units)==atoms(proposed), 'source lexemes changed'
+    if atoms(units) != atoms(proposed):
+        raise ValueError('CHES source lexemes changed; refusing proposal')
+    if {n for u in proposed for n in u.sources} != set(range(len(ches_spans))):
+        raise ValueError('CHES source span coverage changed; refusing proposal')
     english_units=[{'text':u.raw,'source_spans':list(u.sources)} for u in proposed
                    if u.raw.lower() not in MARKERS]
     readable=re.sub(r'\s+', ' ', ' '.join(x['text'].replace('»','').replace('·',' ')
@@ -153,4 +236,5 @@ def reorder_verse(ches_spans: list[str], cvot_bold_words: list[str]) -> dict:
             'ordered_units':[{'text':u.raw,'source_spans':list(u.sources)} for u in proposed],
             'english_word_order':readable,
             'moves':moves,'source_lexemes_preserved':True,
+            'source_spans_preserved':True,'cvot_anchor_order_preserved':True,
             'cvot_bold_word_count':len(cvot_bold_words)}

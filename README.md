@@ -34,3 +34,9 @@ The supplied archive contains individual PDF-derived spans, not a independently 
 ## Next work
 
 Build audited verse-level token alignment and more robust CHES PDF-fragment reconstruction; independently verify representative cases from other books; add clause/phrase constraints; measure failure rates before broadening beyond locally proven movements.
+
+## Stage 2: constrained object-subject ordering
+
+In addition to the original verb-subject swap, the engine can now propose a verb-object-subject to subject-verb-object permutation for the literal CHES object forms »·them and to·them, only where the CVOT boldface sequence independently supports the subject, verb root and object order. It does not generalize to other objects. Source-span completeness, lexeme multiset equality, non-reused CVOT anchors and noncrossing clause-anchor order are enforced. The original source documents remain outside the repository.
+
+An offline audit of uploaded Genesis 1 data found 29 individually anchored moves (26 original VSO, 3 new VOS) across 24 of 31 verses; 7 verses had no movement. These are mechanical proposals, not full grammatical validation. See docs/verification/GENESIS_1_LOCAL_AUDIT.md.
