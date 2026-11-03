@@ -45,13 +45,14 @@ def _extend_words(target: list[str], words: list[str]) -> None:
             target.append(word)
 
 def extract_bold_verses(pdf_path: str | Path, *, pages: tuple[int,int],
-                        verse_count: int) -> dict[int,list[str]]:
+                        verse_count: int, chapter_number: int = 1) -> dict[int,list[str]]:
     """Explicit 1-based page interval of a known chapter; fails on missing verses.
 
-    Does not locate chapters automatically and must not be used as an all-book
-    alignment or word-choice proof.
+    chapter_number is the expected printed chapter marker, including chapters
+    starting mid-page. Earlier chapter material is ignored. Do not use this as
+    an all-book alignment or word-choice proof.
     """
-    if verse_count < 1 or pages[0] < 1 or pages[1] < pages[0]:
+    if chapter_number < 1 or verse_count < 1 or pages[0] < 1 or pages[1] < pages[0]:
         raise ValueError('invalid page range or verse count')
     try:
         import fitz
@@ -69,7 +70,9 @@ def extract_bold_verses(pdf_path: str | Path, *, pages: tuple[int,int],
                 for frag in line:
                     x,y,content,is_bold,is_small_num,size=frag
                     val=content.strip()
-                    is_first=(current==0 and val=='1' and is_bold and x<141)
+                    is_first=(current==0 and val==str(chapter_number) and is_bold
+                              and not is_small_num and x<141
+                              and 11.5<=size<=14)
                     if (current==verse_count and is_bold and x<141
                         and val.isdigit() and len(val)<=2):
                         stop=True

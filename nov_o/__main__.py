@@ -17,7 +17,7 @@ def main():
     p.add_argument('--verse-count',type=int,default=31)
     p.add_argument('--output',type=Path,default=Path('local_proposals.json'))
     a=p.parse_args()
-    verses=extract_bold_verses(a.cvot_pdf,pages=(a.page_start,a.page_end),verse_count=a.verse_count)
+    verses=extract_bold_verses(a.cvot_pdf,pages=(a.page_start,a.page_end),verse_count=a.verse_count,chapter_number=a.chapter)
     result={}
     for n in range(1,a.verse_count+1):
         ref=f'{a.book}.{a.chapter}.{n}'

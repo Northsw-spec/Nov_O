@@ -40,3 +40,15 @@ Build audited verse-level token alignment and more robust CHES PDF-fragment reco
 In addition to the original verb-subject swap, the engine can now propose a verb-object-subject to subject-verb-object permutation for the literal CHES object forms »·them and to·them, only where the CVOT boldface sequence independently supports the subject, verb root and object order. It does not generalize to other objects. Source-span completeness, lexeme multiset equality, non-reused CVOT anchors and noncrossing clause-anchor order are enforced. The original source documents remain outside the repository.
 
 An offline audit of uploaded Genesis 1 data found 29 individually anchored moves (26 original VSO, 3 new VOS) across 24 of 31 verses; 7 verses had no movement. These are mechanical proposals, not full grammatical validation. See docs/verification/GENESIS_1_LOCAL_AUDIT.md.
+
+
+## Genesis 2–3: chapter-aware PDF extraction
+
+The CVOT reader now accepts an explicit chapter_number (default 1 for backwards compatibility), so it can start at a **mid-page** chapter marker instead of silently reading the preceding chapter. Both chapter and verse markers must have the expected PDF typography; missing sequential markers fail closed. The CLI forwards --chapter to the reader.
+
+Locally verified page intervals for the supplied CVOT 2021 PDF:
+- Genesis 1: --chapter 1 --page-start 19 --page-end 21 --verse-count 31
+- Genesis 2: --chapter 2 --page-start 21 --page-end 23 --verse-count 25
+- Genesis 3: --chapter 3 --page-start 23 --page-end 25 --verse-count 24
+
+A limited offline audit found 11 CVOT-anchored VSO moves in Genesis 2 and 11 in Genesis 3, with original CHES words preserved. These are **partial local word-order proposals**, not completed verse translations. See docs/verification/GENESIS_2_3_LOCAL_AUDIT.md. Source documents and generated chapter text remain local.
