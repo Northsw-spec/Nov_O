@@ -1,0 +1,8 @@
+*.pdf
+*.zip
+*.json
+!*.schema.json
+__pycache__/
+.pytest_cache/
+local_proposals*
+.venv/
