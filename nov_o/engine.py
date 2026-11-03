@@ -166,7 +166,7 @@ def _move_object_before_subject(units: list[Unit], bold_words: list[str],
                     min(verb.sources), anchor, prior_moves + changes
                 ):
                     if verb.raw.startswith('and·'):
-                        out.append(Unit('and',verb.sources))
+                        out.append(Unit('and',(verb.sources[0],)))
                         moving_verb = Unit(verb.raw[4:],verb.sources)
                     else:
                         moving_verb = verb
@@ -204,7 +204,7 @@ def reorder_verse(ches_spans: list[str], cvot_bold_words: list[str]) -> dict:
             min(candidate.sources), target_position, moves
         ):
             if candidate.raw.startswith('and·'):
-                proposed.append(Unit('and',candidate.sources))
+                proposed.append(Unit('and',(candidate.sources[0],)))
                 verb=Unit(candidate.raw[4:],candidate.sources)
             else:
                 verb=candidate
